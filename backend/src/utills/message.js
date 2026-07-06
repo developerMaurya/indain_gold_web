@@ -1,0 +1,38 @@
+export const MESSAGES = {
+    SUCCESS: {
+        GET_SUCCESS: 'Data retrieved successfully',
+        INSERT_SUCCESS: 'Data insert successfully',
+        UPDATED_SUCCESS: 'Data updated successfully',
+        LOGIN_SUCCESS: 'Login successful',
+        CREATE_SUCCESS: 'Created successfully',
+        DELETE_SUCCESS: 'Deleted successfully',
+        UPDATE_SUCCESS: 'Updated successfully',
+        LOGOUT_SUCCESS: 'Logged out successfully',
+        OTP_SENT_SUCCESS: 'OTP sent successfully',
+        OTP_VERIFIED: 'OTP verified successfully'
+    },
+    ERROR: {
+        DATA_NOT_FOUND: 'Data not found',
+        AUTHORIZATION_REQUIRED: "Authentication required",
+        NOT_FOUND: 'Data not found',
+        VALIDATION: 'Validation failed',
+        SOMETHING_WORNG: 'Something went wrong !',
+        INVALID_CREDENTIALS: 'Invalid email or password',
+        LOGIN_FAILED: 'Login failed',
+        CREATE_FAILED: 'Creation failed',
+        UPDATE_FAILED: 'Update failed',
+        NO_RESPONSE: 'No response from database',
+        DATABASE_ERROR: 'Database error occurred',
+        UNKNOWN_ERROR: 'Unknown error occurred',
+        INTERNAL_SERVER_ERROR: 'Internal server error',
+        INVALID_MOBILE_NUMBER: 'Invalid mobile number',
+        SMS_FAILED: 'Failed to send SMS',
+        INVALID_USERNAME: 'Username not valid',
+        CONFIG_ERROR: "Configuration Error: API Token missing",
+        EXTERNAL_API_ERROR: "External API Error: Invalid or empty response",
+        MISSING_REQUIRED_FIELDS: "Missing required fields",
+        INVALID_DATA: "Missing or invalid data",
+        UNAUTHRISED: "Unauthorized access",
+        INVALID_ADMIN: "Invalid Admin",
+    }
+};
