@@ -73,6 +73,8 @@ export const createInvoice = async (req, res) => {
         gstAmount: itemGstAmount,
         total: itemTotal,
         unit: product.unit,
+        dose: product.dose,
+        hsnCode: product.hsnCode,
       });
     }
 

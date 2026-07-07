@@ -35,6 +35,12 @@ const InvoiceItemSchema = new mongoose.Schema({
   unit: {
     type: String,
   },
+  dose: {
+    type: String,
+  },
+  hsnCode: {
+    type: String,
+  },
 });
 
 const InvoiceSchema = new mongoose.Schema({

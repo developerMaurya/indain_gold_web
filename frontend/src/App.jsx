@@ -23,11 +23,322 @@ import {
   Printer,
   ChevronRight,
   ShoppingBag,
-  Eye
+  Eye,
+  TrendingUp,
+  PieChart
 } from 'lucide-react';
 
-// Set up default axios base url or interceptors
-axios.defaults.baseURL = ''; // Handled by Vite server proxy to localhost:5000
+// Beautiful Custom SVG Line/Area Trend Chart
+function AreaTrendChart({ data }) {
+  if (!data || data.length === 0) return <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>No trend data available</div>;
+
+  const width = 500;
+  const height = 240;
+  const paddingLeft = 50;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 30;
+
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
+
+  const maxSales = Math.max(...data.map(d => d.sales), 100);
+  const maxProfit = Math.max(...data.map(d => d.profit), 100);
+  const maxValue = Math.max(maxSales, maxProfit) * 1.1;
+
+  const pointsSales = data.map((d, i) => {
+    const x = paddingLeft + (i * (chartWidth / (data.length - 1 || 1)));
+    const y = paddingTop + chartHeight - ((d.sales / maxValue) * chartHeight);
+    return { x, y };
+  });
+
+  const pointsProfit = data.map((d, i) => {
+    const x = paddingLeft + (i * (chartWidth / (data.length - 1 || 1)));
+    const y = paddingTop + chartHeight - ((d.profit / maxValue) * chartHeight);
+    return { x, y };
+  });
+
+  const pathSalesD = pointsSales.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaSalesD = pointsSales.length > 0 ? `${pathSalesD} L ${pointsSales[pointsSales.length - 1].x} ${paddingTop + chartHeight} L ${pointsSales[0].x} ${paddingTop + chartHeight} Z` : '';
+
+  const pathProfitD = pointsProfit.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+  const areaProfitD = pointsProfit.length > 0 ? `${pathProfitD} L ${pointsProfit[pointsProfit.length - 1].x} ${paddingTop + chartHeight} L ${pointsProfit[0].x} ${paddingTop + chartHeight} Z` : '';
+
+  const yTicks = 4;
+  const gridLines = [];
+  for (let i = 0; i <= yTicks; i++) {
+    const value = (maxValue / yTicks) * i;
+    const y = paddingTop + chartHeight - (i * (chartHeight / yTicks));
+    gridLines.push({ y, value });
+  }
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', background: 'transparent' }}>
+      <defs>
+        <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(200, 85%, 55%)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="hsl(200, 85%, 55%)" stopOpacity="0.0" />
+        </linearGradient>
+        <linearGradient id="profitGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(145, 80%, 50%)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="hsl(145, 80%, 50%)" stopOpacity="0.0" />
+        </linearGradient>
+      </defs>
+
+      {gridLines.map((line, idx) => (
+        <g key={idx}>
+          <line
+            x1={paddingLeft}
+            y1={line.y}
+            x2={width - paddingRight}
+            y2={line.y}
+            stroke="rgba(255, 255, 255, 0.05)"
+            strokeDasharray="4 4"
+          />
+          <text
+            x={paddingLeft - 8}
+            y={line.y + 4}
+            fill="var(--text-muted)"
+            fontSize="10"
+            textAnchor="end"
+            fontWeight="600"
+          >
+            ₹{line.value >= 1000 ? `${(line.value / 1000).toFixed(1)}k` : Math.round(line.value)}
+          </text>
+        </g>
+      ))}
+
+      <path d={areaSalesD} fill="url(#salesGrad)" />
+      <path d={areaProfitD} fill="url(#profitGrad)" />
+
+      <path d={pathSalesD} fill="none" stroke="hsl(200, 85%, 55%)" strokeWidth="2.5" strokeLinecap="round" />
+      <path d={pathProfitD} fill="none" stroke="hsl(145, 80%, 50%)" strokeWidth="2.5" strokeLinecap="round" />
+
+      {pointsSales.map((p, idx) => (
+        <g key={`sales-pt-${idx}`}>
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r="4"
+            fill="#fff"
+            stroke="hsl(200, 85%, 55%)"
+            strokeWidth="2"
+          />
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r="12"
+            fill="transparent"
+            style={{ cursor: 'pointer' }}
+          >
+            <title>Sales: ₹{data[idx].sales.toFixed(2)}</title>
+          </circle>
+        </g>
+      ))}
+
+      {pointsProfit.map((p, idx) => (
+        <g key={`profit-pt-${idx}`}>
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r="4"
+            fill="#fff"
+            stroke="hsl(145, 80%, 50%)"
+            strokeWidth="2"
+          />
+          <circle
+            cx={p.x}
+            cy={p.y}
+            r="12"
+            fill="transparent"
+            style={{ cursor: 'pointer' }}
+          >
+            <title>Profit: ₹{data[idx].profit.toFixed(2)}</title>
+          </circle>
+        </g>
+      ))}
+
+      {data.map((d, i) => {
+        const x = paddingLeft + (i * (chartWidth / (data.length - 1 || 1)));
+        return (
+          <text
+            key={`x-${i}`}
+            x={x}
+            y={height - 8}
+            fill="var(--text-muted)"
+            fontSize="9"
+            textAnchor="middle"
+            fontWeight="600"
+          >
+            {d.label}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Beautiful Custom SVG Bar Chart
+function CategoryBarChart({ data }) {
+  if (!data || data.length === 0) return <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center', padding: '20px' }}>No category data available</div>;
+
+  const width = 500;
+  const height = 240;
+  const paddingLeft = 50;
+  const paddingRight = 20;
+  const paddingTop = 20;
+  const paddingBottom = 35;
+
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
+
+  const maxVal = Math.max(...data.map(d => d.stock), 10);
+  const limitValue = maxVal * 1.1;
+
+  const barWidth = Math.min(45, (chartWidth / data.length) * 0.6);
+  const gap = (chartWidth - (barWidth * data.length)) / (data.length - 1 || 1);
+
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} style={{ width: '100%', height: 'auto', background: 'transparent' }}>
+      <defs>
+        <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="hsl(265, 80%, 65%)" />
+          <stop offset="100%" stopColor="hsl(280, 80%, 45%)" />
+        </linearGradient>
+      </defs>
+
+      {[0, 1, 2, 3, 4].map((i) => {
+        const value = (limitValue / 4) * i;
+        const y = paddingTop + chartHeight - (i * (chartHeight / 4));
+        return (
+          <g key={i}>
+            <line
+              x1={paddingLeft}
+              y1={y}
+              x2={width - paddingRight}
+              y2={y}
+              stroke="rgba(255, 255, 255, 0.05)"
+              strokeDasharray="4 4"
+            />
+            <text
+              x={paddingLeft - 8}
+              y={y + 4}
+              fill="var(--text-muted)"
+              fontSize="10"
+              textAnchor="end"
+              fontWeight="600"
+            >
+              {Math.round(value)}
+            </text>
+          </g>
+        );
+      })}
+
+      {data.map((d, i) => {
+        const x = paddingLeft + (i * (barWidth + gap)) + (gap / 2);
+        const barHeight = (d.stock / limitValue) * chartHeight;
+        const y = paddingTop + chartHeight - barHeight;
+
+        return (
+          <g key={i} style={{ cursor: 'pointer' }}>
+            <title>{`${d.category}: ${d.stock} units in stock`}</title>
+            <rect
+              x={x}
+              y={paddingTop}
+              width={barWidth}
+              height={chartHeight}
+              rx={4}
+              fill="rgba(255, 255, 255, 0.015)"
+            />
+            <rect
+              x={x}
+              y={y}
+              width={barWidth}
+              height={barHeight}
+              rx={4}
+              fill="url(#barGrad)"
+            />
+            <text
+              x={x + barWidth / 2}
+              y={y - 6}
+              fill="var(--text-main)"
+              fontSize="9"
+              fontWeight="700"
+              textAnchor="middle"
+            >
+              {d.stock}
+            </text>
+            <text
+              x={x + barWidth / 2}
+              y={height - 8}
+              fill="var(--text-muted)"
+              fontSize="9"
+              fontWeight="600"
+              textAnchor="middle"
+            >
+              {d.category.length > 8 ? `${d.category.slice(0, 7)}.` : d.category}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Beautiful Custom SVG Radial Progress Gauge / Meter
+function RadialProgressGauge({ value, total, label, colorGrad }) {
+  const percentage = Math.min(100, Math.max(0, total > 0 ? Math.round((value / total) * 100) : 0));
+  
+  const size = 150;
+  const strokeWidth = 12;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  const strokeColor = colorGrad || 'hsl(145, 80%, 50%)';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '10px' }}>
+      <div style={{ position: 'relative', width: `${size}px`, height: `${size}px` }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke="rgba(255, 255, 255, 0.03)"
+            strokeWidth={strokeWidth}
+          />
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="transparent"
+            stroke={strokeColor}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 0.8s ease-out' }}
+          />
+        </svg>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <span style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main)' }}>{percentage}%</span>
+          <span style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginTop: '2px' }}>Achieved</span>
+        </div>
+      </div>
+      <div style={{ marginTop: '10px', textAlign: 'center' }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>{label}</div>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+          ₹{value.toLocaleString('en-IN')} / ₹{total.toLocaleString('en-IN')}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   // Authentication & Global States
@@ -74,7 +385,7 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [billCustomer, setBillCustomer] = useState({ name: '', phone: '', address: '', city: '', state: '', country: 'India', gstNumber: '', pincode: '' });
   const [distinctShipping, setDistinctShipping] = useState(false);
-  const [shippingDetails, setShippingDetails] = useState({ name: '', phone: '', address: '', city: '', state: '', country: 'India', pincode: '' });
+  const [shippingDetails, setShippingDetails] = useState({ name: '', phone: '', address: '', city: '', state: '', country: 'India', pincode: '', gstNumber: '' });
   const [printTemplate, setPrintTemplate] = useState('normal'); // 'normal' or 'thermal'
   
   // POS Specific States
@@ -98,6 +409,16 @@ export default function App() {
   const [profilePhone, setProfilePhone] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+
+  const [analyticsTab, setAnalyticsTab] = useState('pl');
+
+  // Company Info States (stored in localStorage)
+  const [companyInfo, setCompanyInfo] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('companyInfo')) || {}; } catch { return {}; }
+  });
+  const [companyForm, setCompanyForm] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('companyInfo')) || { gst: '', address: '', pincode: '', state: '', country: 'India', website: '' }; } catch { return { gst: '', address: '', pincode: '', state: '', country: 'India', website: '' }; }
+  });
 
   // Fetch initial data based on login state
   useEffect(() => {
@@ -166,6 +487,146 @@ export default function App() {
     } catch (err) {
       showFlash('error', 'Failed to fetch invoices.');
     }
+  };
+
+  // Calculate dynamic dashboard / analytics statistics
+  const getAnalyticsData = () => {
+    const today = new Date();
+    const todayStr = today.toDateString();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    let todaySales = 0;
+    let todayProfit = 0;
+    let todayInvoicesCount = 0;
+    let todayItemsSoldCount = 0;
+    let todayPurchaseCost = 0;
+    let monthlySales = 0;
+    let monthlyProfit = 0;
+
+    // Map product cost
+    const productCostMap = {};
+    products.forEach(p => {
+      productCostMap[p._id] = p.purchasePrice || 0;
+    });
+
+    invoices.forEach(inv => {
+      const invDate = new Date(inv.createdAt);
+      const isToday = invDate.toDateString() === todayStr;
+      const isThisMonth = invDate.getMonth() === currentMonth && invDate.getFullYear() === currentYear;
+
+      let invoiceCost = 0;
+      inv.items.forEach(item => {
+        const itemCost = productCostMap[item.productId] || 0;
+        invoiceCost += itemCost * item.quantity;
+      });
+
+      const invProfit = inv.subtotal - invoiceCost - (inv.discount || 0);
+
+      if (isToday) {
+        todaySales += inv.grandTotal;
+        todayProfit += invProfit;
+        todayInvoicesCount += 1;
+        todayPurchaseCost += invoiceCost;
+        inv.items.forEach(item => {
+          todayItemsSoldCount += item.quantity || 0;
+        });
+      }
+      if (isThisMonth) {
+        monthlySales += inv.grandTotal;
+        monthlyProfit += invProfit;
+      }
+    });
+
+    // 7 days trend data for Area/Line chart
+    const dailyTrend = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dStr = d.toDateString();
+      const label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
+      
+      let salesAmount = 0;
+      let profitAmount = 0;
+
+      invoices.forEach(inv => {
+        const invDate = new Date(inv.createdAt);
+        if (invDate.toDateString() === dStr) {
+          salesAmount += inv.grandTotal;
+          let invoiceCost = 0;
+          inv.items.forEach(item => {
+            const itemCost = productCostMap[item.productId] || 0;
+            invoiceCost += itemCost * item.quantity;
+          });
+          profitAmount += inv.subtotal - invoiceCost - (inv.discount || 0);
+        }
+      });
+
+      dailyTrend.push({ label, sales: salesAmount, profit: profitAmount });
+    }
+
+    // Category distribution for Bar chart
+    const categoryData = {};
+    products.forEach(p => {
+      const cat = p.category || 'General';
+      if (!categoryData[cat]) {
+        categoryData[cat] = { stock: 0, value: 0, count: 0 };
+      }
+      categoryData[cat].stock += p.stock || 0;
+      categoryData[cat].value += (p.stock || 0) * (p.price || 0);
+      categoryData[cat].count += 1;
+    });
+
+    const categorySummary = Object.keys(categoryData).map(cat => ({
+      category: cat,
+      stock: categoryData[cat].stock,
+      value: categoryData[cat].value,
+      count: categoryData[cat].count
+    }));
+
+    // Customer Billing Ledger
+    const customerLedgerMap = {};
+    invoices.forEach(inv => {
+      const custPhone = inv.customerDetails?.phone || 'N/A';
+      if (!customerLedgerMap[custPhone]) {
+        customerLedgerMap[custPhone] = {
+          name: inv.customerDetails?.name || 'Walk-in Customer',
+          phone: custPhone,
+          totalSpent: 0,
+          ordersCount: 0,
+          lastOrderDate: inv.createdAt
+        };
+      }
+      customerLedgerMap[custPhone].totalSpent += inv.grandTotal;
+      customerLedgerMap[custPhone].ordersCount += 1;
+      if (new Date(inv.createdAt) > new Date(customerLedgerMap[custPhone].lastOrderDate)) {
+        customerLedgerMap[custPhone].lastOrderDate = inv.createdAt;
+      }
+    });
+
+    const customerLedger = Object.values(customerLedgerMap).sort((a, b) => b.totalSpent - a.totalSpent);
+
+    // General Inventory stats
+    const totalRemainingStock = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+    const totalStockValueCost = products.reduce((sum, p) => sum + (p.stock || 0) * (p.purchasePrice || 0), 0);
+    const totalStockValueRetail = products.reduce((sum, p) => sum + (p.stock || 0) * (p.price || 0), 0);
+
+    return {
+      todaySales,
+      todayProfit,
+      todayInvoicesCount,
+      todayItemsSoldCount,
+      todayPurchaseCost,
+      monthlySales,
+      monthlyProfit,
+      dailyTrend,
+      categorySummary,
+      customerLedger,
+      totalRemainingStock,
+      totalStockValueCost,
+      totalStockValueRetail,
+      totalRegisteredCustomers: customers.length
+    };
   };
 
   const fetchDashboardStats = async () => {
@@ -322,7 +783,12 @@ export default function App() {
   };
 
   const resetProductForm = () => {
-    setProductForm({ name: '', description: '', price: '', purchasePrice: '', minSellingPrice: '', stock: '', unit: 'pcs', dose: '', hsnCode: '', gstRate: 0, category: '' });
+    const defaultUnit = user?.industryType === 'medical' ? 'patta'
+      : user?.industryType === 'vegetable' ? 'kg'
+      : user?.industryType === 'drinks' ? 'pcs'
+      : user?.industryType === 'grocery' ? 'pcs'
+      : 'pcs';
+    setProductForm({ name: '', description: '', price: '', purchasePrice: '', minSellingPrice: '', stock: '', unit: defaultUnit, dose: '', hsnCode: '', gstRate: 0, category: '' });
     setEditingProductId(null);
   };
 
@@ -389,6 +855,8 @@ export default function App() {
         quantity: 1,
         gstRate: prod.gstRate || 0,
         unit: prod.unit,
+        dose: prod.dose || '',
+        hsnCode: prod.hsnCode || '',
         stockLimit: prod.stock
       }]);
     }
@@ -472,7 +940,9 @@ export default function App() {
         price: posSelectedProduct.price,
         quantity: posProductQty,
         gstRate: posSelectedProduct.gstRate || 0,
-        unit: posSelectedProduct.unit
+        unit: posSelectedProduct.unit,
+        dose: posSelectedProduct.dose || '',
+        hsnCode: posSelectedProduct.hsnCode || ''
       }]);
     }
     showFlash('success', `${posSelectedProduct.name} added to cart.`);
@@ -511,7 +981,8 @@ export default function App() {
         address: billCustomer.address || '',
         city: billCustomer.city || '',
         state: billCustomer.state || '',
-        pincode: billCustomer.pincode || ''
+        pincode: billCustomer.pincode || '',
+        gstNumber: billCustomer.gstNumber || ''
       },
       items: cart.map((i, index) => ({
         _id: index.toString(),
@@ -520,7 +991,8 @@ export default function App() {
         quantity: i.quantity,
         gstRate: i.gstRate || 0,
         total: (i.price * i.quantity) + ((i.price * i.quantity * (i.gstRate || 0)) / 100),
-        dose: i.dose
+        dose: i.dose,
+        hsnCode: i.hsnCode
       })),
       subtotal,
       taxAmount,
@@ -561,7 +1033,8 @@ export default function App() {
           city: billCustomer.city,
           state: billCustomer.state,
           country: billCustomer.country,
-          pincode: billCustomer.pincode
+          pincode: billCustomer.pincode,
+          gstNumber: billCustomer.gstNumber
         },
         items: cart.map(i => ({ productId: i.productId, quantity: i.quantity })),
         discount: parseFloat(billDiscount || 0),
@@ -574,8 +1047,8 @@ export default function App() {
       setPrintInvoiceData(res.data.invoice);
       setCart([]);
       setBillCustomer({ name: '', phone: '', address: '', city: '', state: '', country: 'India', gstNumber: '', pincode: '' });
+      setShippingDetails({ name: '', phone: '', address: '', city: '', state: '', country: 'India', pincode: '', gstNumber: '' });
       setDistinctShipping(false);
-      setShippingDetails({ name: '', phone: '', address: '', city: '', state: '', country: 'India', pincode: '' });
       setPosSelectedCustomer(null);
       setShowProductCatalogModal(false);
       setBillDiscount(0);
@@ -598,6 +1071,8 @@ export default function App() {
   const downloadProductsExcel = () => {
     window.open(`/api/admin/products/export?token=${token}`);
   };
+
+  const analytics = getAnalyticsData();
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -797,6 +1272,13 @@ export default function App() {
                   >
                     <FileBarChart2 size={18} /> Reports Terminal
                   </button>
+                  <button
+                    className={`btn ${currentView === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
+                    onClick={() => { setCurrentView('analytics'); fetchInvoices(); fetchProducts(); }}
+                  >
+                    <TrendingUp size={18} /> Analytics Center
+                  </button>
                 </>
               )}
 
@@ -990,7 +1472,6 @@ export default function App() {
                       </table>
                     </div>
                   </div>
-
                 </div>
               </div>
             )}
@@ -998,73 +1479,156 @@ export default function App() {
             {/* Admin View: Dashboard */}
             {currentView === 'dashboard' && (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                  <div>
-                    <h1 style={{ fontSize: '28px' }}>Overview Dashboard</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Real-time summaries of transactions, sales analysis, and stock levels.</p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                    <div>
+                      <h1 style={{ fontSize: '28px' }}>Overview Dashboard</h1>
+                      <p style={{ color: 'var(--text-muted)' }}>Real-time summaries of transactions, sales analysis, and stock levels.</p>
+                    </div>
+                    <button onClick={async () => { await fetchDashboardStats(); await fetchInvoices(); await fetchProducts(); }} className="btn btn-secondary" style={{ padding: '10px' }}>
+                      <RefreshCw size={16} /> Reload Metrics
+                    </button>
                   </div>
-                  <button onClick={fetchDashboardStats} className="btn btn-secondary" style={{ padding: '10px' }}>
-                    <RefreshCw size={16} /> Reload Metrics
-                  </button>
-                </div>
 
-                {/* Dashboard Stats Row */}
-                {stats && (
-                  <>
-                    <div className="grid-4" style={{ marginBottom: '30px' }}>
-                      <div className="glass-panel" style={{ position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Revenue</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px', color: 'var(--success-color)' }}>
-                          ₹{stats.summary.totalSales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
+                  {/* Dashboard Stats Row */}
+                  <div className="grid-4" style={{ marginBottom: '30px' }}>
+                    <div className="glass-panel" style={{ borderLeft: '4px solid var(--success-color)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Today's Sales</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--success-color)' }}>
+                        ₹{analytics.todaySales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
-                      <div className="glass-panel">
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Estimated Net Profit</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px', color: 'hsl(200, 80%, 55%)' }}>
-                          ₹{stats.summary.totalProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                      </div>
-                      <div className="glass-panel">
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Sales Orders</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px' }}>
-                          {stats.summary.invoicesCount} Invoices
-                        </div>
-                      </div>
-                      <div className="glass-panel" style={{ borderLeft: stats.summary.lowStockCount > 0 ? '4px solid var(--warning-color)' : '1px solid var(--border-color)' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Critical Stock Warnings</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px', color: stats.summary.lowStockCount > 0 ? 'var(--warning-color)' : 'var(--text-main)' }}>
-                          {stats.summary.lowStockCount} Items Low
-                        </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Net Profit: <span style={{ color: 'hsl(145, 80%, 50%)', fontWeight: 700 }}>₹{analytics.todayProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
-
-                    <div className="grid-3" style={{ marginBottom: '30px' }}>
-                      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Registered Customers</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px', color: 'hsl(145, 80%, 50%)' }}>
-                          {customers.length} Clients
-                        </div>
+                    <div className="glass-panel" style={{ borderLeft: '4px solid hsl(200, 85%, 55%)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>This Month's Sales</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(200, 85%, 55%)' }}>
+                        ₹{analytics.monthlySales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
-                      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Catalog Products</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px', color: 'hsl(265, 80%, 65%)' }}>
-                          {products.length} Items
-                        </div>
-                      </div>
-                      <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <div style={{ fontSize: '14px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Stock Volume</div>
-                        <div style={{ fontSize: '26px', fontWeight: 700, marginTop: '8px', color: 'hsl(35, 90%, 55%)' }}>
-                          {products.reduce((acc, curr) => acc + (curr.stock || 0), 0)} Pieces
-                        </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Net Profit: <span style={{ color: 'hsl(145, 80%, 50%)', fontWeight: 700 }}>₹{analytics.monthlyProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
-                  </>
-                )}
+                    <div className="glass-panel" style={{ borderLeft: '4px solid hsl(265, 80%, 65%)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Remaining Inventory</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(265, 80%, 65%)' }}>
+                        {analytics.totalRemainingStock} Items
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Valued: <span style={{ fontWeight: 700 }}>₹{analytics.totalStockValueRetail.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+                    <div className="glass-panel" style={{ borderLeft: stats?.summary?.lowStockCount > 0 ? '4px solid var(--danger-color)' : '4px solid var(--border-color)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Critical Stock Warnings</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: stats?.summary?.lowStockCount > 0 ? 'var(--danger-color)' : 'var(--text-main)' }}>
+                        {stats?.summary?.lowStockCount || 0} Low Items
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Needs urgent reorder
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="grid-2">
-                  {/* Left Column: Recent Sales */}
-                  <div className="glass-panel">
-                    <h3>Recent Transactions</h3>
+                  {/* Dashboard Secondary Stats Row */}
+                  <div className="grid-3" style={{ marginBottom: '30px' }}>
+                    <div className="glass-panel" style={{ borderLeft: '4px solid hsl(320, 80%, 60%)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Registered Customers</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(320, 80%, 60%)' }}>
+                        {analytics.totalRegisteredCustomers} Clients
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Active buyer directory profiles
+                      </div>
+                    </div>
+                    <div className="glass-panel" style={{ borderLeft: '4px solid hsl(45, 90%, 50%)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Today's Bills Paid</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(45, 90%, 50%)' }}>
+                        {analytics.todayInvoicesCount} Invoices
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Transactions completed today
+                      </div>
+                    </div>
+                    <div className="glass-panel" style={{ borderLeft: '4px solid hsl(175, 80%, 45%)' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Today's Items Sold</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(175, 80%, 45%)' }}>
+                        {analytics.todayItemsSoldCount} Units
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        Stock Purchase Cost: ₹{analytics.todayPurchaseCost.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SVG Charts Row */}
+                  <div className="grid-3" style={{ gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '30px', alignItems: 'start' }}>
+                    <div className="glass-panel" style={{ padding: '24px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                        <h3 style={{ margin: 0 }}>Sales & Profit Weekly Trend</h3>
+                        <div style={{ display: 'flex', gap: '12px', fontSize: '11px', fontWeight: 700 }}>
+                          <span style={{ color: 'hsl(200, 85%, 55%)' }}>● Sales</span>
+                          <span style={{ color: 'hsl(145, 80%, 50%)' }}>● Profit</span>
+                        </div>
+                      </div>
+                      <AreaTrendChart data={analytics.dailyTrend} />
+                    </div>
+
+                    <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <RadialProgressGauge
+                        value={analytics.monthlySales}
+                        total={100000}
+                        label="Monthly Sales Target"
+                        colorGrad="hsl(200, 85%, 55%)"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid-2" style={{ marginBottom: '30px' }}>
+                    {/* Left Column: Category Bar Chart */}
+                    <div className="glass-panel" style={{ padding: '24px' }}>
+                      <h3 style={{ marginBottom: '14px' }}>Inventory Stock per Category</h3>
+                      <CategoryBarChart data={analytics.categorySummary} />
+                    </div>
+
+                    {/* Right Column: Low Stock Panel */}
+                    <div className="glass-panel">
+                      <h3 style={{ color: 'var(--warning-color)' }}>Low Stock Checklist</h3>
+                      <div className="custom-table-container" style={{ marginTop: '20px' }}>
+                        <table className="custom-table">
+                          <thead>
+                            <tr>
+                              <th>Product Name</th>
+                              <th>Category</th>
+                              <th>Price</th>
+                              <th>Current Stock</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {stats?.lowStockProducts.length === 0 ? (
+                              <tr>
+                                <td colSpan="4" style={{ textAlign: 'center', color: 'var(--success-color)' }}>All items have adequate inventory!</td>
+                              </tr>
+                            ) : (
+                              stats?.lowStockProducts.map(prod => (
+                                <tr key={prod._id}>
+                                  <td style={{ fontWeight: 600 }}>{prod.name} {prod.dose && `(${prod.dose})`}</td>
+                                  <td>{prod.category || 'General'}</td>
+                                  <td>₹{prod.price.toFixed(2)}</td>
+                                  <td style={{ color: 'var(--danger-color)', fontWeight: 700 }}>
+                                    {prod.stock} {prod.unit}
+                                  </td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Recent Sales Table */}
+                  <div className="glass-panel" style={{ marginBottom: '30px' }}>
+                    <h3>Recent Transactions Ledger</h3>
                     <div className="custom-table-container" style={{ marginTop: '20px' }}>
                       <table className="custom-table">
                         <thead>
@@ -1073,13 +1637,14 @@ export default function App() {
                             <th>Customer</th>
                             <th>Total Amount</th>
                             <th>Payment</th>
+                            <th>Date & Time</th>
                             <th></th>
                           </tr>
                         </thead>
                         <tbody>
                           {stats?.recentInvoices.length === 0 ? (
                             <tr>
-                              <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No invoices generated yet.</td>
+                              <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No invoices generated yet.</td>
                             </tr>
                           ) : (
                             stats?.recentInvoices.map(inv => (
@@ -1089,6 +1654,9 @@ export default function App() {
                                 <td>₹{inv.grandTotal.toFixed(2)}</td>
                                 <td>
                                   <span className="badge badge-active" style={{ fontSize: '10px' }}>{inv.paymentMethod}</span>
+                                </td>
+                                <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                  {new Date(inv.createdAt).toLocaleString()}
                                 </td>
                                 <td>
                                   <button
@@ -1107,44 +1675,7 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Right Column: Low Stock Panel */}
-                  <div className="glass-panel">
-                    <h3 style={{ color: 'var(--warning-color)' }}>Low Stock Checklist</h3>
-                    <div className="custom-table-container" style={{ marginTop: '20px' }}>
-                      <table className="custom-table">
-                        <thead>
-                          <tr>
-                            <th>Product Name</th>
-                            <th>Category</th>
-                            <th>Price</th>
-                            <th>Current Stock</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {stats?.lowStockProducts.length === 0 ? (
-                            <tr>
-                              <td colSpan="4" style={{ textAlign: 'center', color: 'var(--success-color)' }}>All items have adequate inventory!</td>
-                            </tr>
-                          ) : (
-                            stats?.lowStockProducts.map(prod => (
-                              <tr key={prod._id}>
-                                <td style={{ fontWeight: 600 }}>{prod.name} {prod.dose && `(${prod.dose})`}</td>
-                                <td>{prod.category || 'General'}</td>
-                                <td>₹{prod.price.toFixed(2)}</td>
-                                <td style={{ color: 'var(--danger-color)', fontWeight: 700 }}>
-                                  {prod.stock} {prod.unit}
-                                </td>
-                              </tr>
-                            ))
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
                 </div>
-
-              </div>
             )}
 
             {/* Admin View: Billing Terminal */}
@@ -1448,7 +1979,7 @@ export default function App() {
                                 onChange={(e) => setShippingDetails({ ...shippingDetails, address: e.target.value })}
                               />
                             </div>
-                            <div className="grid-3">
+                            <div className="grid-4">
                               <div className="form-group">
                                 <label className="form-label">City</label>
                                 <input
@@ -1474,6 +2005,15 @@ export default function App() {
                                   className="form-input"
                                   value={shippingDetails.pincode || ''}
                                   onChange={(e) => setShippingDetails({ ...shippingDetails, pincode: e.target.value })}
+                                />
+                              </div>
+                              <div className="form-group">
+                                <label className="form-label">GSTIN (Optional)</label>
+                                <input
+                                  type="text"
+                                  className="form-input"
+                                  value={shippingDetails.gstNumber || ''}
+                                  onChange={(e) => setShippingDetails({ ...shippingDetails, gstNumber: e.target.value })}
                                 />
                               </div>
                             </div>
@@ -1917,11 +2457,15 @@ export default function App() {
                               value={productForm.unit}
                               onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
                             >
-                              <option value="patta">Patta / Strip</option>
-                              <option value="box">Box</option>
-                              <option value="tablet">Tablet</option>
-                              <option value="syrup">Syrup Bottle</option>
-                              <option value="set">Set</option>
+                              <option value="patta">💊 Patta / Strip</option>
+                              <option value="tablet">🔵 Single Tablet (Tablet)</option>
+                              <option value="bottle">🍾 Bottle (Liquid / Syrup)</option>
+                              <option value="dabba">📦 Dabba / Box (Carton)</option>
+                              <option value="syrup">🧴 Syrup Bottle</option>
+                              <option value="box">🗃️ Box</option>
+                              <option value="vial">💉 Vial / Injection</option>
+                              <option value="sachet">🫙 Sachet / Powder</option>
+                              <option value="set">🎁 Set</option>
                             </select>
                           </div>
                         </>
@@ -2535,6 +3079,205 @@ export default function App() {
               </div>
             )}
 
+            {/* Analytics Center Panel */}
+            {currentView === 'analytics' && (
+              <div>
+                  <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h1 style={{ fontSize: '28px' }}>Analytics & Reports Center</h1>
+                      <p style={{ color: 'var(--text-muted)' }}>Accounting audits, inventory balance sheets, and customer ledger statistics.</p>
+                    </div>
+                    <button onClick={async () => { await fetchInvoices(); await fetchProducts(); }} className="btn btn-secondary" style={{ padding: '10px' }}>
+                      <RefreshCw size={16} /> Refresh Reports
+                    </button>
+                  </div>
+
+                  {/* Tab Selector Buttons */}
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <button
+                      className={`btn ${analyticsTab === 'pl' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                      onClick={() => setAnalyticsTab('pl')}
+                    >
+                      📈 Profit & Loss (P&L)
+                    </button>
+                    <button
+                      className={`btn ${analyticsTab === 'inventory' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                      onClick={() => setAnalyticsTab('inventory')}
+                    >
+                      📦 Stock balance sheet
+                    </button>
+                    <button
+                      className={`btn ${analyticsTab === 'customer' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ padding: '8px 16px', fontSize: '13px' }}
+                      onClick={() => setAnalyticsTab('customer')}
+                    >
+                      👥 Customer billing report
+                    </button>
+                  </div>
+
+                  {/* TAB 1: P&L Statement */}
+                  {analyticsTab === 'pl' && (
+                    <div>
+                      <div className="grid-3" style={{ marginBottom: '24px' }}>
+                        <div className="glass-panel" style={{ borderLeft: '4px solid var(--success-color)' }}>
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Revenue</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--success-color)' }}>
+                            ₹{analytics.monthlySales.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Gross compiled turnover (this month)</div>
+                        </div>
+                        <div className="glass-panel" style={{ borderLeft: '4px solid var(--danger-color)' }}>
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Cost of Goods Sold (COGS)</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--danger-color)' }}>
+                            ₹{(analytics.monthlySales - analytics.monthlyProfit).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Purchase price of items sold</div>
+                        </div>
+                        <div className="glass-panel" style={{ borderLeft: '4px solid hsl(200, 85%, 55%)' }}>
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Net Monthly Profit</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(200, 85%, 55%)' }}>
+                            ₹{analytics.monthlyProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Deductions & discounts accounted</div>
+                        </div>
+                      </div>
+
+                      <div className="glass-panel">
+                        <h3>Detailed P&L Statement</h3>
+                        <div style={{ marginTop: '20px' }}>
+                          <table className="custom-table">
+                            <thead>
+                              <tr style={{ background: 'rgba(255,255,255,0.015)' }}>
+                                <th style={{ textAlign: 'left' }}>Accounting Ledger Entity</th>
+                                <th style={{ textAlign: 'right' }}>Amount (INR)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td><b>Gross Sales / Turnover (Monthly)</b></td>
+                                <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--success-color)' }}>
+                                  ₹{analytics.monthlySales.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>Cost of Goods Sold (Purchase Value)</td>
+                                <td style={{ textAlign: 'right', color: 'var(--danger-color)' }}>
+                                  - ₹{(analytics.monthlySales - analytics.monthlyProfit).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                              <tr style={{ borderTop: '2px solid var(--border-color)', fontWeight: 700 }}>
+                                <td><b>Estimated Net Profit margin</b></td>
+                                <td style={{ textAlign: 'right', color: 'hsl(200, 85%, 55%)' }}>
+                                  ₹{analytics.monthlyProfit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: Stock Balance Sheet */}
+                  {analyticsTab === 'inventory' && (
+                    <div>
+                      <div className="grid-4" style={{ marginBottom: '24px' }}>
+                        <div className="glass-panel">
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Unique Items</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px' }}>{products.length} Products</div>
+                        </div>
+                        <div className="glass-panel">
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Total Remaining Units</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'hsl(265, 80%, 65%)' }}>{analytics.totalRemainingStock} pcs</div>
+                        </div>
+                        <div className="glass-panel">
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Inventory Cost Value</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--danger-color)' }}>
+                            ₹{analytics.totalStockValueCost.toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                        <div className="glass-panel">
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>Projected Selling Value</div>
+                          <div style={{ fontSize: '24px', fontWeight: 800, marginTop: '6px', color: 'var(--success-color)' }}>
+                            ₹{analytics.totalStockValueRetail.toLocaleString('en-IN')}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="glass-panel" style={{ marginBottom: '24px' }}>
+                        <h3>Inventory Stock Category Valuation</h3>
+                        <div className="custom-table-container" style={{ marginTop: '20px' }}>
+                          <table className="custom-table">
+                            <thead>
+                              <tr>
+                                <th>Category</th>
+                                <th>Products count</th>
+                                <th>Total units in stock</th>
+                                <th>Estimated Value (Selling Price)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {analytics.categorySummary.map(row => (
+                                <tr key={row.category}>
+                                  <td style={{ fontWeight: 600 }}>{row.category}</td>
+                                  <td>{row.count} products</td>
+                                  <td>{row.stock} units</td>
+                                  <td style={{ fontWeight: 700, color: 'var(--success-color)' }}>₹{row.value.toLocaleString('en-IN')}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: Customer Spent Ledger */}
+                  {analyticsTab === 'customer' && (
+                    <div className="glass-panel">
+                      <h3>Customer Billing Spent Ranking</h3>
+                      <div className="custom-table-container" style={{ marginTop: '20px' }}>
+                        <table className="custom-table">
+                          <thead>
+                            <tr>
+                              <th>Client Details</th>
+                              <th>Mobile Number</th>
+                              <th>Total Orders count</th>
+                              <th>Total Billed spent</th>
+                              <th>Last transaction date</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {analytics.customerLedger.length === 0 ? (
+                              <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>No customer invoices generated yet.</td>
+                              </tr>
+                            ) : (
+                              analytics.customerLedger.map((row, idx) => (
+                                <tr key={row.phone}>
+                                  <td>
+                                    <div style={{ fontWeight: 600 }}>
+                                      {idx === 0 && '👑 '} {row.name}
+                                    </div>
+                                  </td>
+                                  <td>{row.phone}</td>
+                                  <td>{row.ordersCount} invoices</td>
+                                  <td style={{ fontWeight: 700, color: 'var(--success-color)' }}>₹{row.totalSpent.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                  <td style={{ fontSize: '13px' }}>{new Date(row.lastOrderDate).toLocaleDateString()}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+            )}
+
             {/* Profile Settings Panel */}
             {currentView === 'profile' && (
               <div>
@@ -2602,6 +3345,86 @@ export default function App() {
                       </div>
                       <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>
                         Update Password
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Company Profile Details */}
+                  <div className="glass-panel" style={{ gridColumn: 'span 2', marginTop: '20px' }}>
+                    <h3>Company / Business Profile Details</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '16px' }}>Specify company details that will print on your Tax Invoices.</p>
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      localStorage.setItem('companyInfo', JSON.stringify(companyForm));
+                      setCompanyInfo(companyForm);
+                      showFlash('success', 'Company details saved successfully!');
+                    }} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      <div className="grid-3">
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Company GSTIN</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. 27AAAAA1111A1Z1"
+                            value={companyForm.gst || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, gst: e.target.value })}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Pincode</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. 400001"
+                            value={companyForm.pincode || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, pincode: e.target.value })}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Website</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. www.indiangold.com"
+                            value={companyForm.website || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, website: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid-3">
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Address</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. Hathibazar, Varanasi"
+                            value={companyForm.address || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, address: e.target.value })}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">State</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. Uttar Pradesh"
+                            value={companyForm.state || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, state: e.target.value })}
+                          />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                          <label className="form-label">Country</label>
+                          <input
+                            type="text"
+                            className="form-input"
+                            placeholder="e.g. India"
+                            value={companyForm.country || ''}
+                            onChange={(e) => setCompanyForm({ ...companyForm, country: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <button type="submit" className="btn btn-success" style={{ alignSelf: 'flex-start', padding: '10px 20px' }}>
+                        Save Company Details
                       </button>
                     </form>
                   </div>
@@ -2705,10 +3528,27 @@ export default function App() {
 
 
           {printInvoiceData && (
-            <div className="no-print-bg" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
+            <div className="no-print-bg" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px', overflowY: 'auto' }}>
               
-              <div className="print-modal-container" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: printTemplate === 'normal' ? '780px' : '400px' }}>
+              <div className="print-modal-container" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', maxWidth: printTemplate === 'normal' ? '780px' : '400px', position: 'relative' }}>
                 
+                {/* Floating Close X Button */}
+                <button
+                  className="no-print"
+                  onClick={() => setPrintInvoiceData(null)}
+                  style={{
+                    position: 'absolute', top: '-12px', right: '-12px', zIndex: 9999,
+                    width: '36px', height: '36px', borderRadius: '50%',
+                    background: '#ef4444', color: '#fff', border: '2px solid #fff',
+                    fontSize: '18px', fontWeight: 900, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)', lineHeight: 1
+                  }}
+                  title="Close Invoice"
+                >
+                  ✕
+                </button>
+
                 {/* Control Panel (Hidden during printing) */}
                 <div className="glass-panel no-print" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px' }}>
                   <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
@@ -2763,18 +3603,27 @@ export default function App() {
                     /* ----------------- NORMAL A4 TEMPLATE ----------------- */
                     <div style={{ fontFamily: 'Inter, sans-serif' }}>
                       
-                      {/* Header Logo & Info */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #e2e8f0', paddingBottom: '20px', marginBottom: '20px' }}>
-                        <div>
-                          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: '0 0 4px 0', color: '#0f172a' }}>{user?.name || 'Business Name'}</h1>
-                          <div style={{ fontSize: '13px', color: '#64748b', textTransform: 'capitalize' }}>Category: {user?.industryType}</div>
-                          {user?.phone && <div style={{ fontSize: '13px', color: '#64748b' }}>Phone: {user.phone}</div>}
-                          {user?.email && <div style={{ fontSize: '13px', color: '#64748b' }}>Email: {user.email}</div>}
+                      {/* Header Logo & Company Info */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '20px', marginBottom: '20px' }}>
+                        <div style={{ flex: 1 }}>
+                          <h1 style={{ fontSize: '26px', fontWeight: 900, margin: '0 0 2px 0', color: '#0f172a', letterSpacing: '-0.02em' }}>{user?.name || 'Business Name'}</h1>
+                          <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'capitalize', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '8px' }}>Category: {user?.industryType}</div>
+                          <div style={{ fontSize: '12px', color: '#475569' }}>Company Mobile: {user?.phone || 'N/A'}</div>
+                          {user?.email && <div style={{ fontSize: '12px', color: '#475569' }}>Company Email: {user.email}</div>}
+                          {companyInfo.address && <div style={{ fontSize: '12px', color: '#475569' }}>Company Address: {companyInfo.address}</div>}
+                          {(companyInfo.state || companyInfo.country) && (
+                            <div style={{ fontSize: '12px', color: '#475569' }}>
+                              State: {companyInfo.state || 'N/A'}, Country: {companyInfo.country || 'India'}
+                            </div>
+                          )}
+                          {companyInfo.pincode && <div style={{ fontSize: '12px', color: '#475569' }}>Company Pincode: {companyInfo.pincode}</div>}
+                          {companyInfo.gst && <div style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>Company GST: {companyInfo.gst}</div>}
+                          {companyInfo.website && <div style={{ fontSize: '12px', color: '#475569' }}>Company Website: {companyInfo.website}</div>}
                         </div>
-                        <div style={{ textAlign: 'right' }}>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 4px 0', color: 'var(--primary-color)' }}>TAX INVOICE</h2>
                           <div style={{ fontSize: '13px', color: '#475569' }}>Invoice #: <span style={{ fontWeight: 600 }}>{printInvoiceData.invoiceNumber}</span></div>
-                          <div style={{ fontSize: '13px', color: '#475569' }}>Date: {new Date(printInvoiceData.createdAt).toLocaleDateString()}</div>
+                          <div style={{ fontSize: '13px', color: '#475569' }}>Date & Time: {new Date(printInvoiceData.createdAt).toLocaleString()}</div>
                         </div>
                       </div>
 
@@ -2783,15 +3632,16 @@ export default function App() {
                         <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                           <div style={{ fontWeight: 700, fontSize: '12px', color: '#64748b', textTransform: 'uppercase', marginBottom: '8px' }}>Billed To:</div>
                           <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>{printInvoiceData.customerDetails.name}</div>
-                          <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>📞 {printInvoiceData.customerDetails.phone}</div>
-                          {printInvoiceData.customerDetails.email && <div style={{ fontSize: '13px', color: '#475569' }}>✉ {printInvoiceData.customerDetails.email}</div>}
-                          {printInvoiceData.customerDetails.address && (
-                            <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
-                              {[printInvoiceData.customerDetails.address, printInvoiceData.customerDetails.city, printInvoiceData.customerDetails.state].filter(Boolean).join(', ')}{printInvoiceData.customerDetails.pincode ? ' - ' + printInvoiceData.customerDetails.pincode : ''}
+                          <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>Customer Mobile: {printInvoiceData.customerDetails.phone}</div>
+                          {printInvoiceData.customerDetails.email && <div style={{ fontSize: '12px', color: '#475569' }}>Customer Email: {printInvoiceData.customerDetails.email}</div>}
+                          {printInvoiceData.customerDetails.address && <div style={{ fontSize: '12px', color: '#475569' }}>Customer Address: {printInvoiceData.customerDetails.address}{printInvoiceData.customerDetails.city ? ', ' + printInvoiceData.customerDetails.city : ''}</div>}
+                          {(printInvoiceData.customerDetails.state || printInvoiceData.customerDetails.country) && (
+                            <div style={{ fontSize: '12px', color: '#475569' }}>
+                              State: {printInvoiceData.customerDetails.state || 'N/A'}, Country: {printInvoiceData.customerDetails.country || 'India'}
                             </div>
                           )}
-                          {printInvoiceData.customerDetails.gstNumber && <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: 600, marginTop: '6px' }}>GSTIN: {printInvoiceData.customerDetails.gstNumber}</div>}
-                          {printInvoiceData.paymentStatus && <div style={{ marginTop: '6px', display: 'inline-block', padding: '2px 8px', borderRadius: '99px', fontSize: '11px', fontWeight: 700, background: printInvoiceData.paymentStatus === 'paid' ? '#dcfce7' : printInvoiceData.paymentStatus === 'partial' ? '#fef9c3' : '#fee2e2', color: printInvoiceData.paymentStatus === 'paid' ? '#15803d' : printInvoiceData.paymentStatus === 'partial' ? '#854d0e' : '#b91c1c' }}>{printInvoiceData.paymentStatus.toUpperCase()}</div>}
+                          {printInvoiceData.customerDetails.pincode && <div style={{ fontSize: '12px', color: '#475569' }}>Customer Pincode: {printInvoiceData.customerDetails.pincode}</div>}
+                          {printInvoiceData.customerDetails.gstNumber && <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: 600, marginTop: '4px' }}>Customer GST: {printInvoiceData.customerDetails.gstNumber}</div>}
                         </div>
 
                         <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
@@ -2799,12 +3649,15 @@ export default function App() {
                           {printInvoiceData.shippingDetails ? (
                             <>
                               <div style={{ fontWeight: 700, fontSize: '15px', color: '#0f172a' }}>{printInvoiceData.shippingDetails.name}</div>
-                              <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>📞 {printInvoiceData.shippingDetails.phone}</div>
-                              {printInvoiceData.shippingDetails.address && (
-                                <div style={{ fontSize: '13px', color: '#475569', marginTop: '4px' }}>
-                                  {[printInvoiceData.shippingDetails.address, printInvoiceData.shippingDetails.city, printInvoiceData.shippingDetails.state].filter(Boolean).join(', ')}{printInvoiceData.shippingDetails.pincode ? ' - ' + printInvoiceData.shippingDetails.pincode : ''}
+                              <div style={{ fontSize: '12px', color: '#475569', marginTop: '4px' }}>Customer Mobile: {printInvoiceData.shippingDetails.phone}</div>
+                              {printInvoiceData.shippingDetails.address && <div style={{ fontSize: '12px', color: '#475569' }}>Customer Address: {printInvoiceData.shippingDetails.address}{printInvoiceData.shippingDetails.city ? ', ' + printInvoiceData.shippingDetails.city : ''}</div>}
+                              {(printInvoiceData.shippingDetails.state || printInvoiceData.shippingDetails.country) && (
+                                <div style={{ fontSize: '12px', color: '#475569' }}>
+                                  State: {printInvoiceData.shippingDetails.state || 'N/A'}, Country: {printInvoiceData.shippingDetails.country || 'India'}
                                 </div>
                               )}
+                              {printInvoiceData.shippingDetails.pincode && <div style={{ fontSize: '12px', color: '#475569' }}>Customer Pincode: {printInvoiceData.shippingDetails.pincode}</div>}
+                              {printInvoiceData.shippingDetails.gstNumber && <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: 600, marginTop: '4px' }}>Customer GST: {printInvoiceData.shippingDetails.gstNumber}</div>}
                             </>
                           ) : (
                             <div style={{ fontSize: '13px', color: '#64748b', fontStyle: 'italic', marginTop: '10px' }}>Same as Billing Details</div>
@@ -2817,6 +3670,7 @@ export default function App() {
                         <thead>
                           <tr style={{ background: '#f1f5f9', borderBottom: '2px solid #cbd5e1' }}>
                             <th style={{ textAlign: 'left', padding: '10px', fontSize: '12px', color: '#475569', fontWeight: 700 }}>Item Description</th>
+                            <th style={{ textAlign: 'left', padding: '10px', fontSize: '12px', color: '#475569', fontWeight: 700 }}>HSN</th>
                             <th style={{ textAlign: 'right', padding: '10px', fontSize: '12px', color: '#475569', fontWeight: 700 }}>Rate</th>
                             <th style={{ textAlign: 'center', padding: '10px', fontSize: '12px', color: '#475569', fontWeight: 700 }}>Qty</th>
                             <th style={{ textAlign: 'right', padding: '10px', fontSize: '12px', color: '#475569', fontWeight: 700 }}>GST %</th>
@@ -2829,6 +3683,9 @@ export default function App() {
                               <td style={{ padding: '12px 10px', fontSize: '13px', fontWeight: 600, color: '#0f172a' }}>
                                 {item.name}
                                 {item.dose && <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 400 }}>Dose: {item.dose}</div>}
+                              </td>
+                              <td style={{ padding: '12px 10px', fontSize: '13px', color: '#334155' }}>
+                                {item.hsnCode || 'N/A'}
                               </td>
                               <td style={{ textAlign: 'right', padding: '12px 10px', fontSize: '13px', color: '#334155' }}>₹{item.price.toFixed(2)}</td>
                               <td style={{ textAlign: 'center', padding: '12px 10px', fontSize: '13px', color: '#334155' }}>{item.quantity}</td>
