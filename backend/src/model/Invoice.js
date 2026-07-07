@@ -71,6 +71,7 @@ const InvoiceSchema = new mongoose.Schema({
     state: { type: String },
     country: { type: String },
     pincode: { type: String },
+    gstNumber: { type: String },
   },
   items: [InvoiceItemSchema],
   subtotal: {

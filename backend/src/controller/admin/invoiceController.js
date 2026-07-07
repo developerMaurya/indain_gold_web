@@ -104,6 +104,7 @@ export const createInvoice = async (req, res) => {
         state: customer.state || customerState,
         country: customer.country || customerCountry,
         pincode: customer.pincode || customerPincode,
+        gstNumber: customer.gstNumber || customerGst,
       },
       items: processedItems,
       subtotal: calculatedSubtotal,
