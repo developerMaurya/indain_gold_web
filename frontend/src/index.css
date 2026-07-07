@@ -110,10 +110,10 @@ h1, h2, h3, h4, h5, h6 {
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
 
 @media (max-width: 1024px) {
-  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 768px) {
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr !important; }
 }
 
 .form-group {
@@ -250,6 +250,10 @@ h1, h2, h3, h4, h5, h6 {
   min-height: 100vh;
 }
 
+.responsive-flex {
+  display: flex;
+}
+
 .sidebar {
   width: 260px;
   background: var(--bg-sidebar);
@@ -306,6 +310,9 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
   .dashboard-layout {
     flex-direction: column;
+  }
+  .responsive-flex {
+    flex-direction: column !important;
   }
   .mobile-top-bar {
     display: flex;

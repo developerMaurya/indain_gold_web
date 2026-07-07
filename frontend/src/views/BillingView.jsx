@@ -52,7 +52,7 @@ export default function BillingView({
       </div>
 
       {!showProductCatalogModal ? (
-        <div className="grid-2" style={{ gridTemplateColumns: '1.2fr 1fr', alignItems: 'start' }}>
+        <div className="grid-2" style={{ alignItems: 'start' }}>
         
         {/* Left Column: POS Customer & Product Selection */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -511,7 +511,7 @@ export default function BillingView({
 
           {/* Filters Row */}
           <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px', padding: '20px' }}>
-            <div className="grid-3" style={{ gridTemplateColumns: '2fr 1fr 1fr', gap: '16px' }}>
+            <div className="grid-3" style={{ gap: '16px' }}>
               <div style={{ position: 'relative' }}>
                 <Search size={18} style={{ position: 'absolute', left: '12px', top: '13px', color: 'var(--text-muted)' }} />
                 <input
@@ -541,7 +541,7 @@ export default function BillingView({
             </div>
 
             {/* Dynamic Price Range Selector */}
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '14px', display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 0.5fr', gap: '20px', alignItems: 'center' }}>
+            <div className="grid-4" style={{ borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '14px', alignItems: 'center' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Max Price Range Slider</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -587,7 +587,7 @@ export default function BillingView({
           </div>
 
           {/* Split Layout: Catalog Grid + Temporary Live Cart Summary */}
-          <div style={{ display: 'flex', gap: '24px', flex: 1, overflow: 'hidden' }}>
+          <div className="responsive-flex" style={{ gap: '24px', flex: 1, overflow: 'hidden' }}>
             
             {/* Left Side: Product Cards Grid */}
             <div style={{ flex: 1.8, overflowY: 'auto', paddingRight: '10px' }}>

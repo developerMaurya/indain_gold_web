@@ -30,7 +30,7 @@ export default function InventoryView({
         </button>
       </div>
 
-      <div className="grid-3" style={{ gridTemplateColumns: '1.1fr 2fr', alignItems: 'start' }}>
+      <div className="grid-2" style={{ alignItems: 'start' }}>
         
         {/* Dynamic Product Form */}
         <div className="glass-panel">

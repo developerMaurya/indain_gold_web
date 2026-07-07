@@ -18,7 +18,7 @@ export default function SuperadminView({
         <p style={{ color: 'var(--text-muted)' }}>Superadmin portal to create, configure, and toggle active status of client business logins.</p>
       </div>
 
-      <div className="grid-3" style={{ gridTemplateColumns: '1fr 2fr', alignItems: 'start' }}>
+      <div className="grid-2" style={{ alignItems: 'start' }}>
         
         {/* Create / Edit Panel */}
         <div className="glass-panel">

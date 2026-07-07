@@ -20,7 +20,7 @@ export default function CustomersView({
         <p style={{ color: 'var(--text-muted)' }}>Register and update profile details of buyers.</p>
       </div>
 
-      <div className="grid-3" style={{ gridTemplateColumns: '1fr 2fr', alignItems: 'start' }}>
+      <div className="grid-2" style={{ alignItems: 'start' }}>
         
         {/* Customer register panel */}
         <div className="glass-panel">

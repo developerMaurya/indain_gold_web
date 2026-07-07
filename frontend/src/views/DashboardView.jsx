@@ -96,7 +96,7 @@ export default function DashboardView({
       </div>
 
       {/* SVG Charts Row */}
-      <div className="grid-3" style={{ gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '30px', alignItems: 'start' }}>
+      <div className="grid-2" style={{ gap: '24px', marginBottom: '30px', alignItems: 'start' }}>
         <div className="glass-panel" style={{ padding: '24px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
             <h3 style={{ margin: 0 }}>Sales & Profit Weekly Trend</h3>
