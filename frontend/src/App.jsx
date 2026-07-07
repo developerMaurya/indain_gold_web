@@ -25,7 +25,11 @@ import {
   ShoppingBag,
   Eye,
   TrendingUp,
-  PieChart
+  PieChart,
+  Menu,
+  Sun,
+  Moon,
+  X
 } from 'lucide-react';
 
 // Modular Views & Sub-Components
@@ -103,6 +107,20 @@ export default function App() {
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [paymentStatus, setPaymentStatus] = useState('paid');
   const [printInvoiceData, setPrintInvoiceData] = useState(null);
+
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'dark';
+  });
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-theme');
+    } else {
+      document.documentElement.classList.remove('light-theme');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   // Profile Form States
   const [profileName, setProfileName] = useState('');
@@ -917,13 +935,59 @@ export default function App() {
         /* 2. Main Dashboard Panel */
         <div className="dashboard-layout">
           
-          {/* Sidebar */}
-          <div className="sidebar">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '40px' }}>
-              <div style={{ background: 'var(--primary-gradient)', padding: '8px', borderRadius: '10px' }}>
-                <Receipt size={20} color="#fff" />
+          {/* Mobile Top Header Bar */}
+          <div className="mobile-top-bar no-print">
+            <button
+              onClick={() => setIsMobileSidebarOpen(true)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center' }}
+            >
+              <Menu size={24} />
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ background: 'var(--primary-gradient)', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center' }}>
+                <Receipt size={16} color="#fff" />
               </div>
-              <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em' }}>McZen Billing</span>
+              <span style={{ fontSize: '16px', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>
+                {companyInfo?.name || user?.name || 'McZen Billing'}
+              </span>
+            </div>
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              style={{ background: 'none', border: 'none', color: 'var(--text-main)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center' }}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
+
+          {/* Sidebar Backdrop Overlay */}
+          <div
+            className={`sidebar-backdrop ${isMobileSidebarOpen ? 'mobile-open' : ''}`}
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+          
+          {/* Sidebar */}
+          <div className={`sidebar ${isMobileSidebarOpen ? 'mobile-open' : ''}`}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+                <div style={{ background: 'var(--primary-gradient)', padding: '8px', borderRadius: '10px', flexShrink: 0 }}>
+                  <Receipt size={20} color="#fff" />
+                </div>
+                <span style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {companyInfo?.name || user?.name || 'McZen Billing'}
+                </span>
+              </div>
+              <button
+                onClick={() => setIsMobileSidebarOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-main)',
+                  padding: '6px', borderRadius: '50%', cursor: 'pointer',
+                  alignItems: 'center', justifyContent: 'center'
+                }}
+                className="mobile-close-btn"
+              >
+                <X size={16} />
+              </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
@@ -931,7 +995,7 @@ export default function App() {
                 <button
                   className={`btn ${currentView === 'admins' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                  onClick={() => setCurrentView('admins')}
+                  onClick={() => { setCurrentView('admins'); setIsMobileSidebarOpen(false); }}
                 >
                   <Shield size={18} /> Admin Accounts
                 </button>
@@ -940,42 +1004,42 @@ export default function App() {
                   <button
                     className={`btn ${currentView === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                    onClick={() => { setCurrentView('dashboard'); fetchDashboardStats(); }}
+                    onClick={() => { setCurrentView('dashboard'); fetchDashboardStats(); setIsMobileSidebarOpen(false); }}
                   >
                     <LayoutDashboard size={18} /> Dashboard
                   </button>
                   <button
                     className={`btn ${currentView === 'billing' ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                    onClick={() => { setCurrentView('billing'); fetchProducts(); }}
+                    onClick={() => { setCurrentView('billing'); fetchProducts(); setIsMobileSidebarOpen(false); }}
                   >
                     <Receipt size={18} /> Billing Terminal
                   </button>
                   <button
                     className={`btn ${currentView === 'inventory' ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                    onClick={() => { setCurrentView('inventory'); fetchProducts(); }}
+                    onClick={() => { setCurrentView('inventory'); fetchProducts(); setIsMobileSidebarOpen(false); }}
                   >
                     <Package size={18} /> Inventory Items
                   </button>
                   <button
                     className={`btn ${currentView === 'customers' ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                    onClick={() => { setCurrentView('customers'); fetchCustomers(); }}
+                    onClick={() => { setCurrentView('customers'); fetchCustomers(); setIsMobileSidebarOpen(false); }}
                   >
                     <Users size={18} /> Customers
                   </button>
                   <button
                     className={`btn ${currentView === 'reports' ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                    onClick={() => { setCurrentView('reports'); fetchInvoices(); }}
+                    onClick={() => { setCurrentView('reports'); fetchInvoices(); setIsMobileSidebarOpen(false); }}
                   >
                     <FileBarChart2 size={18} /> Reports Terminal
                   </button>
                   <button
                     className={`btn ${currentView === 'analytics' ? 'btn-primary' : 'btn-secondary'}`}
                     style={{ justifyContent: 'flex-start', padding: '10px 16px' }}
-                    onClick={() => { setCurrentView('analytics'); fetchInvoices(); fetchProducts(); }}
+                    onClick={() => { setCurrentView('analytics'); fetchInvoices(); fetchProducts(); setIsMobileSidebarOpen(false); }}
                   >
                     <TrendingUp size={18} /> Analytics Center
                   </button>
@@ -985,7 +1049,7 @@ export default function App() {
               <button
                 className={`btn ${currentView === 'profile' ? 'btn-primary' : 'btn-secondary'}`}
                 style={{ justifyContent: 'flex-start', padding: '10px 16px', marginTop: 'auto' }}
-                onClick={() => setCurrentView('profile')}
+                onClick={() => { setCurrentView('profile'); setIsMobileSidebarOpen(false); }}
               >
                 <UserIcon size={18} /> My Settings
               </button>
@@ -997,6 +1061,13 @@ export default function App() {
               <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 {user?.role} {user?.role === 'admin' && `(${user?.industryType})`}
               </div>
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="btn btn-secondary no-print"
+                style={{ padding: '6px 12px', fontSize: '12px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+              >
+                {theme === 'dark' ? <Sun size={12} /> : <Moon size={12} />} Theme: {theme === 'dark' ? 'Bright' : 'Dark'}
+              </button>
               <button onClick={handleLogout} className="btn btn-danger" style={{ padding: '6px 12px', fontSize: '12px', width: '100%', marginTop: '4px' }}>
                 <LogOut size={12} /> Sign Out
               </button>

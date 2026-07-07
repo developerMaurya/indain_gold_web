@@ -7,7 +7,7 @@ export default function InvoiceA4Template({ printInvoiceData, user, companyInfo 
       {/* Header Logo & Company Info */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #e2e8f0', paddingBottom: '20px', marginBottom: '20px' }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '26px', fontWeight: 900, margin: '0 0 2px 0', color: '#0f172a', letterSpacing: '-0.02em' }}>{user?.name || 'Business Name'}</h1>
+          <h1 style={{ fontSize: '26px', fontWeight: 900, margin: '0 0 2px 0', color: '#0f172a', letterSpacing: '-0.02em' }}>{companyInfo?.name || user?.name || 'Business Name'}</h1>
           <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'capitalize', fontWeight: 600, letterSpacing: '0.05em', marginBottom: '8px' }}>Category: {user?.industryType}</div>
           <div style={{ fontSize: '12px', color: '#475569' }}>Company Mobile: {user?.phone || 'N/A'}</div>
           {user?.email && <div style={{ fontSize: '12px', color: '#475569' }}>Company Email: {user.email}</div>}

@@ -1,10 +1,10 @@
 import React from 'react';
 
-export default function InvoiceThermalTemplate({ printInvoiceData, user }) {
+export default function InvoiceThermalTemplate({ printInvoiceData, user, companyInfo }) {
   return (
     <div style={{ fontFamily: "'Courier New', Courier, monospace", fontSize: '13px', color: '#000', lineHeight: '1.4' }}>
       <div style={{ textAlign: 'center', marginBottom: '14px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px 0' }}>{user?.name}</h2>
+        <h2 style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 4px 0' }}>{companyInfo?.name || user?.name || 'Business Name'}</h2>
         <div style={{ textTransform: 'capitalize' }}>Sector: {user?.industryType}</div>
         {user?.phone && <div>Tel: {user.phone}</div>}
         <div>================================</div>
